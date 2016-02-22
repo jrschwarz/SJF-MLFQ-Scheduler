@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,10 +24,30 @@ namespace CPU_Scheduler
             p8.AddProcesses(new int[] { 5, 52, 4, 42, 6, 31, 7, 21, 4, 43, 5, 31, 7, 32, 6, 32, 7, 41, 4 });
             p9.AddProcesses(new int[] { 11, 37, 12, 41, 6, 41, 4, 48, 6, 41, 5, 29, 4, 26, 5, 31, 3 });
         }
-
-        public static void SetUpForSJF(Queue<Process> q)
+        public static Process GetNextProcess(List<Process> processes)
         {
-            //Set up q for SJF Algorithm
+            var p = processes.Min();
+            processes.Remove(p);
+            p.State = Process.Status.RUNNING;
+            return p;
+        }
+        public static void UpdateQueues(ref Process p, List<Process> readyQ, List<Process> blockingList)
+        {
+            if(p?.State == Process.Status.READY) readyQ.Add(p);
+            if (p?.State == Process.Status.BLOCKED) blockingList.Add(p);
+
+            List<Process> readyProcesses = blockingList.FindAll(x => x?.State == Process.Status.READY);
+
+            readyQ.AddRange(readyProcesses);
+
+            readyQ.RemoveAll(x => x?.State == Process.Status.BLOCKED || x?.State == Process.Status.FINISHED);
+            blockingList.RemoveAll(x => x?.State == Process.Status.READY || x?.State == Process.Status.FINISHED);
+
+            if (p?.State == Process.Status.FINISHED || p?.State == Process.Status.BLOCKED) p = null;
+        }
+        public static bool AllFinished(List<Process> readyQ, List<Process> blockingList)
+        {
+            return readyQ.Count == 0 && blockingList.Count == 0;
         }
         public static void Main(string[] args)
         {
@@ -42,13 +63,51 @@ namespace CPU_Scheduler
 
             SetUpProcesses(p1, p2, p3, p4, p5, p6, p7, p8, p9);
 
-            Queue<Process> readyQ = new Queue<Process>( new Process[] { p1, p2, p3, p4, p5, p6, p7, p8, p9 });
-            SetUpForSJF(readyQ);
+            List<Process> readyQ = new List<Process>( new Process[] { p1, p2, p3, p4, p5, p6, p7, p8, p9 });
+            List<Process> blockingList = new List<Process>();
 
-            
+            Process runningP = null;
+
+            int counter = 0;
+
             // SJF Algorithm
-            
-            
+            while (true)
+            {
+                Console.WriteLine("Current Process: " + runningP);
+                Console.WriteLine("ReadyQ: " + String.Join(",", readyQ));
+                Console.WriteLine("BlockingList: " + String.Join(",", blockingList));
+                Console.WriteLine("Counter: {0}", counter);
+                Console.WriteLine();
+
+                if (readyQ.Count > 0 || runningP != null)
+                {
+                    if (runningP == null ) runningP = GetNextProcess(readyQ);
+                    if (runningP.ResponseTime == null) runningP.ResponseTime = counter;
+
+                    runningP.CurCPUTime--;
+                }
+
+                foreach (Process p in blockingList)
+                {
+                    p.CurCPUTime--;
+                    p.Update();
+                }
+
+                runningP?.Update();
+                UpdateQueues(ref runningP, readyQ, blockingList);
+
+                counter++;
+
+                // Checks to see if all processes have finished
+                if (AllFinished(readyQ, blockingList)) break;
+            }
+
+            Console.WriteLine("Counter: {0}", counter);
+
+
+
+
+
             // MLFQ Algorithm     
 
         }

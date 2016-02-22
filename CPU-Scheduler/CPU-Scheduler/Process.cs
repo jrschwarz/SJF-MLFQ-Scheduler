@@ -7,22 +7,22 @@ using System.Threading.Tasks;
 
 namespace CPU_Scheduler
 {
-    class Process
+    class Process : IComparable<Process>
     {
         private int[] _processes;
         private int _index;
 
 
-        public int? curCPUTime;
+        public int? CurCPUTime;
         public int ArrivalTime { get; set; }
         public int? ResponseTime { get; set; }
-        public bool IsFinished { get; set; }
         public Status State { get; set; }
         public enum Status
         {
             READY,
             RUNNING,
-            BLOCKED
+            BLOCKED,
+            FINISHED
         }; 
 
         public Process()
@@ -30,17 +30,43 @@ namespace CPU_Scheduler
             _processes = new int[] { }; // initialize with no processes
             ArrivalTime = 0;
             ResponseTime = null;
-            IsFinished = false;
             State = Status.READY;
             _index = 0;
-            curCPUTime = null;
+            CurCPUTime = null;
 
         }
         public void AddProcesses(int[] inputProcesses)
         {
             _processes = inputProcesses;
-            curCPUTime = _processes[_index];
+            CurCPUTime = _processes[_index];
         }
+        public void Update()
+        {
+            if (CurCPUTime == 0)
+            {
+                _index++;
+                State = (_index % 2 == 0) ? Status.READY : Status.BLOCKED;
 
+                if (_index < _processes.Length)
+                {
+                    CurCPUTime = _processes[_index];
+                }
+                else
+                {
+                    CurCPUTime = null;
+                    State = Status.FINISHED;
+                }
+            }
+
+            
+        }
+        public int CompareTo(Process p)
+        {
+            return (this.CurCPUTime < p.CurCPUTime) ? -1 : 1;
+        }
+        public override string ToString()
+        {
+            return CurCPUTime.ToString();
+        }
     }
 }
