@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace CPU_Scheduler
@@ -12,9 +13,12 @@ namespace CPU_Scheduler
         private int[] _processes;
         private int _index;
 
+        public int? WaitTime;
+
+        public int? TurnTime;
 
         public int? CurCPUTime;
-        public int ArrivalTime { get; set; }
+        public int[] ArrivalTime { get; set; }
         public int? ResponseTime { get; set; }
         public Status State { get; set; }
         public enum Status
@@ -28,7 +32,9 @@ namespace CPU_Scheduler
         public Process()
         {
             _processes = new int[] { }; // initialize with no processes
-            ArrivalTime = 0;
+            ArrivalTime = new int[] {0, 0};
+            WaitTime = null;
+            TurnTime = null;
             ResponseTime = null;
             State = Status.READY;
             _index = 0;
@@ -59,6 +65,10 @@ namespace CPU_Scheduler
             }
 
             
+        }
+        public int GetTotalCPUTime()
+        {
+            return _processes.Sum();
         }
         public int CompareTo(Process p)
         {

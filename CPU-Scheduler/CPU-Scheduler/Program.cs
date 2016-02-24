@@ -31,7 +31,7 @@ namespace CPU_Scheduler
             p.State = Process.Status.RUNNING;
             return p;
         }
-        public static void UpdateQueues(ref Process p, List<Process> readyQ, List<Process> blockingList)
+        public static void UpdateQueues(ref Process p, List<Process> readyQ, List<Process> blockingList, int counter)
         {
             if(p?.State == Process.Status.READY) readyQ.Add(p);
             if (p?.State == Process.Status.BLOCKED) blockingList.Add(p);
@@ -43,11 +43,23 @@ namespace CPU_Scheduler
             readyQ.RemoveAll(x => x?.State == Process.Status.BLOCKED || x?.State == Process.Status.FINISHED);
             blockingList.RemoveAll(x => x?.State == Process.Status.READY || x?.State == Process.Status.FINISHED);
 
-            if (p?.State == Process.Status.FINISHED || p?.State == Process.Status.BLOCKED) p = null;
+            if (p?.CurCPUTime == 0) p.ArrivalTime[1] = counter;
+
+            if (p?.State == Process.Status.BLOCKED) p = null;
+            if (p?.State == Process.Status.FINISHED)
+            {
+                CalcTime(p, counter);
+                p = null;
+            }
         }
-        public static bool AllFinished(List<Process> readyQ, List<Process> blockingList)
+        public static bool AllFinished(Process runningP, List<Process> readyQ, List<Process> blockingList)
         {
-            return readyQ.Count == 0 && blockingList.Count == 0;
+            return readyQ.Count == 0 && blockingList.Count == 0 && runningP == null;
+        }
+        private static void CalcTime(Process p, int time)
+        {
+            p.TurnTime = time;
+            p.WaitTime = p.TurnTime - p.GetTotalCPUTime();
         }
         public static void Main(string[] args)
         {
@@ -94,16 +106,16 @@ namespace CPU_Scheduler
                 }
 
                 runningP?.Update();
-                UpdateQueues(ref runningP, readyQ, blockingList);
-
-                counter++;
-
+                
                 // Checks to see if all processes have finished
-                if (AllFinished(readyQ, blockingList)) break;
+                if (AllFinished(runningP, readyQ, blockingList)) break;
+
+                UpdateQueues(ref runningP, readyQ, blockingList, counter);
+                counter++;
             }
 
             Console.WriteLine("Counter: {0}", counter);
-
+            Console.Read();
 
 
 
