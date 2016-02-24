@@ -13,6 +13,8 @@ namespace CPU_Scheduler
         private int[] _processes;
         private int _index;
 
+        public string Name;
+
         public int? WaitTime;
 
         public int? TurnTime;
@@ -29,10 +31,11 @@ namespace CPU_Scheduler
             FINISHED
         }; 
 
-        public Process()
+        public Process(string name)
         {
             _processes = new int[] { }; // initialize with no processes
             ArrivalTime = new int[] {0, 0};
+            Name = name;
             WaitTime = null;
             TurnTime = null;
             ResponseTime = null;

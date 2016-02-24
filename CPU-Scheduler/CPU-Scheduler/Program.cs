@@ -46,6 +46,7 @@ namespace CPU_Scheduler
             if (p?.CurCPUTime == 0) p.ArrivalTime[1] = counter;
 
             if (p?.State == Process.Status.BLOCKED) p = null;
+
             if (p?.State == Process.Status.FINISHED)
             {
                 CalcTime(p, counter);
@@ -63,15 +64,15 @@ namespace CPU_Scheduler
         }
         public static void Main(string[] args)
         {
-            Process p1 = new Process(),
-                    p2 = new Process(),
-                    p3 = new Process(),
-                    p4 = new Process(),
-                    p5 = new Process(),
-                    p6 = new Process(),
-                    p7 = new Process(),
-                    p8 = new Process(),
-                    p9 = new Process();
+            Process p1 = new Process("P1"),
+                    p2 = new Process("P2"),
+                    p3 = new Process("P3"),
+                    p4 = new Process("P4"),
+                    p5 = new Process("P5"),
+                    p6 = new Process("P6"),
+                    p7 = new Process("P7"),
+                    p8 = new Process("P8"),
+                    p9 = new Process("P9");
 
             SetUpProcesses(p1, p2, p3, p4, p5, p6, p7, p8, p9);
 
@@ -82,18 +83,35 @@ namespace CPU_Scheduler
 
             int counter = 0;
 
+            Console.WriteLine("SJF Algorithm Running....\n");
+
             // SJF Algorithm
+            counter = RunSJF(readyQ, runningP, counter, blockingList);
+
+            Console.WriteLine("Total CPU Time Units: {0}", counter);
+            Console.WriteLine();
+
+            PrintCalculations(p1, p2, p3, p4, p5, p6, p7, p8, p9);
+
+            Console.Read();
+
+
+            // MLFQ Algorithm     
+
+        }
+        private static int RunSJF(List<Process> readyQ, Process runningP, int counter, List<Process> blockingList)
+        {
             while (true)
             {
-                Console.WriteLine("Current Process: " + runningP);
-                Console.WriteLine("ReadyQ: " + String.Join(",", readyQ));
-                Console.WriteLine("BlockingList: " + String.Join(",", blockingList));
-                Console.WriteLine("Counter: {0}", counter);
-                Console.WriteLine();
+                //Console.WriteLine("Current Process: " + runningP);
+                //Console.WriteLine("ReadyQ: " + String.Join(",", readyQ));
+                //Console.WriteLine("BlockingList: " + String.Join(",", blockingList));
+                //Console.WriteLine("Counter: {0}", counter);
+                //Console.WriteLine();
 
                 if (readyQ.Count > 0 || runningP != null)
                 {
-                    if (runningP == null ) runningP = GetNextProcess(readyQ);
+                    if (runningP == null) runningP = GetNextProcess(readyQ);
                     if (runningP.ResponseTime == null) runningP.ResponseTime = counter;
 
                     runningP.CurCPUTime--;
@@ -106,22 +124,44 @@ namespace CPU_Scheduler
                 }
 
                 runningP?.Update();
-                
+
                 // Checks to see if all processes have finished
                 if (AllFinished(runningP, readyQ, blockingList)) break;
 
                 UpdateQueues(ref runningP, readyQ, blockingList, counter);
                 counter++;
             }
+            return counter;
+        }
+        public static void PrintCalculations(params Process[] processes)
+        {
+            List<int?> responseTimes = new List<int?>();
+            List<int?> waitTimes = new List<int?>();
+            List<int?> turnTimes = new List<int?>();
 
-            Console.WriteLine("Counter: {0}", counter);
-            Console.Read();
+            foreach (Process p in processes)
+            {
+                Console.WriteLine("{0}: ResponseTime: {1}", p.Name, p.ResponseTime);
+                Console.WriteLine("    WaitTime: {0}", p.WaitTime);
+                Console.WriteLine("    TurnTime: {0}", p.TurnTime); 
 
+                responseTimes.Add(p.ResponseTime);
+                waitTimes.Add(p.WaitTime);
+                turnTimes.Add(p.TurnTime);
+            }
+            
+            Console.WriteLine("--------------------------------------------------------------");
+            Console.WriteLine("AVG: ResponseTime: {0}", Avg(responseTimes));
+            Console.WriteLine("     WaitTime: {0}", Avg(waitTimes));
+            Console.WriteLine("     TurnTime: {0}", Avg(turnTimes));
+        }
+        public static double Avg(List<int?> times)
+        {
+            double result = times.Cast<int>().Aggregate<int, double>(0, (current, item) => current + item);
 
+            result /= times.Count;
 
-
-            // MLFQ Algorithm     
-
+            return result;
         }
     }
 }
