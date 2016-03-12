@@ -28,8 +28,10 @@ namespace CPU_Scheduler
             READY,
             RUNNING,
             BLOCKED,
-            FINISHED
-        }; 
+            FINISHED,
+            DOWNGRADED
+        };
+        public int? PriorityType { get; set; }
 
         public Process(string name)
         {
@@ -42,6 +44,7 @@ namespace CPU_Scheduler
             State = Status.READY;
             _index = 0;
             CurCPUTime = null;
+            PriorityType = null;
 
         }
         public void AddProcesses(int[] inputProcesses)
@@ -76,6 +79,18 @@ namespace CPU_Scheduler
         public int CompareTo(Process p)
         {
             return (this.CurCPUTime < p.CurCPUTime) ? -1 : 1;
+        }
+
+        public void Reset()
+        {
+            ArrivalTime[0] = 0;
+            ArrivalTime[1] = 0;
+            WaitTime = null;
+            TurnTime = null;
+            ResponseTime = null;
+            State = Status.READY;
+            _index = 0;
+            CurCPUTime = null;
         }
         public override string ToString()
         {
