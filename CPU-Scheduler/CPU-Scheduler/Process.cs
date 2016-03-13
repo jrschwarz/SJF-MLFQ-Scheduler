@@ -98,12 +98,31 @@ namespace CPU_Scheduler
         }
 
         /// <summary>
-        /// Returns total CPU time of a process.
+        /// Returns total of CPU time and I/O of a process.
         /// </summary>
-        /// <returns></returns>
-        public int GetTotalCPUTime()
+        /// <returns>Total I/O and CPU time</returns>
+        public int GetTotal()
         {
             return _processes.Sum();
+        }
+
+        /// <summary>
+        /// Returns the total CPU time of a process.
+        /// </summary>
+        /// <returns>Total CPU time</returns>
+        public int GetTotalCPUTime()
+        {
+            int sum = 0;
+
+            for (int i = 0; i < _processes.Length; i++)
+            {
+                if (i%2 == 0)
+                {
+                    sum += _processes[i];
+                }
+            }
+
+            return sum;
         }
 
         /// <summary>
