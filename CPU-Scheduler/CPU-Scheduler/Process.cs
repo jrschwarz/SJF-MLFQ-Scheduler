@@ -10,19 +10,28 @@ namespace CPU_Scheduler
 {
     class Process : IComparable<Process>
     {
+        // Array of cpu time and I/O time
         private int[] _processes;
+
+        // Keeps track of current position in _processes array
         private int _index;
 
+        // Name of the Process
         public string Name;
 
-        public int? WaitTime;
-
-        public int? TurnTime;
-
-        public int? CurCPUTime;
-        public int[] ArrivalTime { get; set; }
+        // Corresponding times for a process. Calculated at end of run.
+        public int? WaitTime { get; set; }
+        public int? TurnTime { get; set; }
         public int? ResponseTime { get; set; }
+        public int FinishTime { get; set; }
+
+        // The value of _processes[_index]
+        public int? CurCPUTime;
+
+        // Keeps track of the current state of a process
         public Status State { get; set; }
+
+        // Defines the states in which a process can be in
         public enum Status
         {
             READY,
@@ -31,12 +40,17 @@ namespace CPU_Scheduler
             FINISHED,
             DOWNGRADED
         };
+
+        // Priority types of a process (1,2,3)
         public int? PriorityType { get; set; }
 
+        /// <summary>
+        /// Constructor. Initializes all properties.
+        /// </summary>
+        /// <param name="name">Name of process</param>
         public Process(string name)
         {
             _processes = new int[] { }; // initialize with no processes
-            ArrivalTime = new int[] {0, 0};
             Name = name;
             WaitTime = null;
             TurnTime = null;
@@ -47,11 +61,21 @@ namespace CPU_Scheduler
             PriorityType = null;
 
         }
+
+        /// <summary>
+        /// Adds a list of CPU time and I/O time to a process.
+        /// Also sets CurCPUTime to first value of the array.
+        /// </summary>
+        /// <param name="inputProcesses">Array of cpu time and I/O time</param>
         public void AddProcesses(int[] inputProcesses)
         {
             _processes = inputProcesses;
             CurCPUTime = _processes[_index];
         }
+
+        /// <summary>
+        /// Updates that status of a process based on the current position of the _index property
+        /// </summary>
         public void Update()
         {
             if (CurCPUTime == 0)
@@ -72,19 +96,32 @@ namespace CPU_Scheduler
 
             
         }
+
+        /// <summary>
+        /// Returns total CPU time of a process.
+        /// </summary>
+        /// <returns></returns>
         public int GetTotalCPUTime()
         {
             return _processes.Sum();
         }
+
+        /// <summary>
+        /// Implementation of the IComparer Interface. Used to find the min of a process
+        /// based on its CurCPUTime.
+        /// </summary>
+        /// <param name="p">A process</param>
+        /// <returns>1 or -1</returns>
         public int CompareTo(Process p)
         {
             return (this.CurCPUTime < p.CurCPUTime) ? -1 : 1;
         }
 
+        /// <summary>
+        /// Resets all properties of the process.
+        /// </summary>
         public void Reset()
         {
-            ArrivalTime[0] = 0;
-            ArrivalTime[1] = 0;
             WaitTime = null;
             TurnTime = null;
             ResponseTime = null;
@@ -92,6 +129,12 @@ namespace CPU_Scheduler
             _index = 0;
             CurCPUTime = null;
         }
+
+        /// <summary>
+        /// Determine the way a process object is output to a string for 
+        /// displaying to the console.
+        /// </summary>
+        /// <returns></returns>
         public override string ToString()
         {
             return $"{Name}({CurCPUTime})";
