@@ -94,7 +94,7 @@ namespace CPU_Scheduler
         }
         public override string ToString()
         {
-            return CurCPUTime.ToString();
+            return $"{Name}({CurCPUTime})";
         }
     }
 }

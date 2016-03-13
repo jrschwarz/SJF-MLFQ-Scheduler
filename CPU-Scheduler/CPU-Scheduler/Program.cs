@@ -13,6 +13,7 @@ namespace CPU_Scheduler
     {
 
         private static int counter = 0;
+        private static int startOfRunningP;
         private const int tq1 = 7;
         private const int tq2 = 14;
         private static List<Process> readyQ;
@@ -158,21 +159,27 @@ namespace CPU_Scheduler
         }
         public static void Preempt(ref Process p, Queue<Process> readyQ, int priorityType)
         {
+            //RunCurrentProcess(startOfRunningP, ref p);
+            if (p != null)
+            {
                 p.State = Process.Status.READY;
+
                 if (p.PriorityType == 2) readyQ2.Enqueue(p);
                 if (p.PriorityType == 3) readyQ3.Enqueue(p);
 
                 p = readyQ.Dequeue();
                 p.PriorityType = priorityType;
                 p.State = Process.Status.RUNNING;
+            }
         }
         private static void RunMLFQ(Process runningP)
         {
 
-            int startOfRunningP = 0;
+            startOfRunningP = 0;
 
             while (true)
             {
+                
                 // Get next ready process or preempt a process based on priority queue
                 runningP = MLFQGetNext(runningP, ref startOfRunningP);
 
@@ -181,16 +188,27 @@ namespace CPU_Scheduler
 
                 MLFQUpdateBlockingList(blockingList);
 
+                if (runningP != null)
+                {
+                    if(runningP.PriorityType == 1) MLFQUpdateQueues(ref runningP, readyQ1);
+                    else if(runningP.PriorityType == 2) MLFQUpdateQueues(ref runningP, readyQ2);
+                    else if(runningP.PriorityType == 3) MLFQUpdateQueues(ref runningP, readyQ3);
+                }
+
+
                 if (MLFQAllFinished(runningP)) break;
+
+
 
                 counter++;
 
-                //Console.WriteLine("Current Process: " + runningP?.Name + " -> " + runningP);
+
+                //Console.WriteLine("Counter: {0}", counter);
+                //Console.WriteLine("Current Process: " + runningP);
                 //Console.WriteLine("ReadyQ1: " + String.Join(",", readyQ1));
                 //Console.WriteLine("ReadyQ2: " + String.Join(",", readyQ2));
                 //Console.WriteLine("ReadyQ3: " + String.Join(",", readyQ3));
                 //Console.WriteLine("BlockingList: " + String.Join(",", blockingList));
-                //Console.WriteLine("Counter: {0}", counter);
                 //Console.WriteLine();
             }
         }
@@ -210,6 +228,7 @@ namespace CPU_Scheduler
 
                 if (runningP.PriorityType > 1)
                 {
+                    startOfRunningP = counter;
                     Preempt(ref runningP, readyQ1, 1);
                 }
             }
@@ -225,6 +244,7 @@ namespace CPU_Scheduler
 
                 if (runningP.PriorityType > 2)
                 {
+                    startOfRunningP = counter;
                     Preempt(ref runningP, readyQ2, 2);
                 }
             }
@@ -252,8 +272,6 @@ namespace CPU_Scheduler
                         {
                             runningP.CurCPUTime--;
                             runningP.Update();
-                            MLFQUpdateQueues(ref runningP, readyQ1);
-                            if (runningP == null) return false;
                         }
                         else
                         {
@@ -261,12 +279,6 @@ namespace CPU_Scheduler
                             {
                                 runningP.State = Process.Status.DOWNGRADED;
                                 MLFQUpdateQueues(ref runningP, readyQ2); //Downgrade process to priority 2 queue
-                                return false;
-                            }
-                            else // It completed all its CPU bursts, treat normally
-                            {
-                                runningP.Update();
-                                MLFQUpdateQueues(ref runningP, readyQ1);
                                 return false;
                             }
                         }
@@ -278,11 +290,6 @@ namespace CPU_Scheduler
                         {
                             runningP.CurCPUTime--;
                             runningP.Update();
-                            MLFQUpdateQueues(ref runningP, readyQ2);
-                            if (runningP == null)
-                            {
-                                return false;
-                            }
                         }
                         else
                         {
@@ -292,12 +299,6 @@ namespace CPU_Scheduler
                                 MLFQUpdateQueues(ref runningP, readyQ3); //Downgrade process to priority 2 queue
                                 return false;
                             }
-                            else // It completed all its CPU bursts, treat normally
-                            {
-                                runningP.Update();
-                                MLFQUpdateQueues(ref runningP, readyQ2);
-                                return false;
-                            }
                         }
 
 
@@ -305,12 +306,10 @@ namespace CPU_Scheduler
                     case 3:
                         runningP.CurCPUTime--;
                         runningP.Update();
-                        MLFQUpdateQueues(ref runningP, readyQ3);
-                        if (runningP == null) return false;
 
                         break;
                     default:
-                        return false;
+                        break;
                 }
             }
             return true;
