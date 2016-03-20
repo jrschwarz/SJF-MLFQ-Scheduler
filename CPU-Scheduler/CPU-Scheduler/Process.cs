@@ -156,7 +156,8 @@ namespace CPU_Scheduler
         /// <returns></returns>
         public override string ToString()
         {
-            return $"{Name}({CurCPUTime})";
+            if (_index < _processes.Length) return $"{Name}({CurCPUTime})";
+            else return $"{Name}";
         }
     }
 }

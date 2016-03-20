@@ -33,6 +33,9 @@ namespace CPU_Scheduler
         //List that keeps track of all processes in I/O
         private static List<Process> blockingList;
 
+        //List that keeps track of all finished processes
+        private static List<Process> finished; 
+
 
 
         // ------------ SJF Auxillary Methods -------------------------------------------------------------------------------
@@ -74,11 +77,7 @@ namespace CPU_Scheduler
 
             if (p?.State == Process.Status.FINISHED)
             {
-                Console.WriteLine("Counter: {0}", counter);
-                Console.WriteLine("Process Finished: {0}", p.Name);
-                Console.WriteLine("ReadyQ: " + String.Join(", ", readyQ));
-                Console.WriteLine("BlockingList: " + String.Join(", ", blockingList));
-                Console.WriteLine();
+                finished.Add(p);
                 CalcTime(p, counter);
                 p.FinishTime = counter;
                 p = null;
@@ -92,26 +91,26 @@ namespace CPU_Scheduler
         /// <param name="runningP">The Current Process => should be null to start</param>
         private static void RunSJF(Process runningP)
         {
+
             while (true)
             {
-                
+                Process tempP = runningP;
 
                 if (readyQ.Count > 0)
                 {
-                    if (runningP == null)
-                    {
-                        runningP = SJFGetNextProcess(readyQ);
-
-                        Console.WriteLine("Counter: {0}", counter);
-                        Console.WriteLine("Current Process: " + runningP);
-                        Console.WriteLine("ReadyQ: " + String.Join(", ", readyQ));
-                        Console.WriteLine("BlockingList: " + String.Join(", ", blockingList));
-                        Console.WriteLine();
-                    }
+                    if (runningP == null) runningP = SJFGetNextProcess(readyQ);
                     if (runningP.ResponseTime == null) runningP.ResponseTime = counter;
                 }
 
+                if (tempP != runningP)
+                {
+                    SJFPrint(runningP);
+                    tempP = runningP;
+                }
+
                 if (runningP != null) runningP.CurCPUTime--;
+                
+                runningP?.Update();
 
                 foreach (Process p in blockingList)
                 {
@@ -119,15 +118,28 @@ namespace CPU_Scheduler
                     p.Update();
                 }
 
-                runningP?.Update();
-
                 // Checks to see if all processes have finished
                 if (SJFAllFinished(runningP)) break;
 
                 counter++;
                 SJFUpdateQueues(ref runningP);
-                
+
+                if (tempP != runningP)
+                {
+                    SJFPrint(runningP);
+                }
+
             }
+        }
+
+        private static void SJFPrint(Process runningP)
+        {
+            Console.WriteLine("Current Time: {0}", counter);
+            Console.WriteLine("Now Running: " + runningP);
+            Console.WriteLine("Ready Queue: " + String.Join(", ", readyQ));
+            Console.WriteLine("Now in I/O: " + String.Join(", ", blockingList));
+            if (finished.Any()) Console.WriteLine("Completed: " + String.Join(", ", finished));
+            Console.WriteLine();
         }
 
         /// <summary>
@@ -168,13 +180,7 @@ namespace CPU_Scheduler
 
             if (p?.State == Process.Status.FINISHED)
             {
-                Console.WriteLine("Counter: {0}", counter);
-                Console.WriteLine("Process Finished: {0}", p.Name);
-                Console.WriteLine("ReadyQ1: " + String.Join(", ", readyQ1));
-                Console.WriteLine("ReadyQ2: " + String.Join(", ", readyQ2));
-                Console.WriteLine("ReadyQ3: " + String.Join(", ", readyQ3));
-                Console.WriteLine("BlockingList: " + String.Join(", ", blockingList));
-                Console.WriteLine();
+                finished.Add(p);
                 CalcTime(p, counter);
                 p.FinishTime = counter;
                 p = null;
@@ -268,13 +274,32 @@ namespace CPU_Scheduler
 
                 counter++;
 
+                Process tempP = runningP;
+
                 if (runningP != null)
                 {
                     if (runningP.PriorityType == 1) MLFQUpdateQueues(ref runningP, readyQ1);
                     else if (runningP.PriorityType == 2) MLFQUpdateQueues(ref runningP, readyQ2);
                     else if (runningP.PriorityType == 3) MLFQUpdateQueues(ref runningP, readyQ3);
                 }
+
+                if (tempP != runningP)
+                {
+                    MLFQPrint(runningP);
+                }
             }
+        }
+
+        private static void MLFQPrint(Process runningP)
+        {
+            Console.WriteLine("Current Time: {0}", counter);
+            Console.WriteLine("Now running: " + runningP);
+            Console.WriteLine("Ready Queue 1: " + String.Join(", ", readyQ1));
+            Console.WriteLine("Ready Queue 2: " + String.Join(", ", readyQ2));
+            Console.WriteLine("Ready Queue 3: " + String.Join(", ", readyQ3));
+            Console.WriteLine("Now in I/O: " + String.Join(", ", blockingList));
+            if (finished.Any()) Console.WriteLine("Completed: " + String.Join(", ", finished));
+            Console.WriteLine();
         }
 
         /// <summary>
@@ -336,13 +361,7 @@ namespace CPU_Scheduler
 
             if (p != runningP)
             {
-                Console.WriteLine("Counter: {0}", counter);
-                Console.WriteLine("Current Process: " + runningP);
-                Console.WriteLine("ReadyQ1: " + String.Join(", ", readyQ1));
-                Console.WriteLine("ReadyQ2: " + String.Join(", ", readyQ2));
-                Console.WriteLine("ReadyQ3: " + String.Join(", ", readyQ3));
-                Console.WriteLine("BlockingList: " + String.Join(", ", blockingList));
-                Console.WriteLine();
+                MLFQPrint(runningP);
             }
 
             return runningP;
@@ -481,10 +500,11 @@ namespace CPU_Scheduler
         /// <param name="processes">A list of processes</param>
         public static void PrintCalculations(params Process[] processes)
         {
+
             List<int?> responseTimes = new List<int?>();
             List<int?> waitTimes = new List<int?>();
             List<int?> turnTimes = new List<int?>();
-            List<double?> cpuUtilizations = new List<double?>();
+
 
             foreach (Process p in processes)
             {
@@ -579,6 +599,7 @@ namespace CPU_Scheduler
 
             readyQ = new List<Process>( new Process[] { p1, p2, p3, p4, p5, p6, p7, p8, p9 });
             blockingList = new List<Process>();
+            finished = new List<Process>();
 
             Process runningP = null;
 
@@ -589,6 +610,7 @@ namespace CPU_Scheduler
             // SJF Algorithm
             RunSJF(runningP);
 
+            Console.WriteLine("Finished\n");
             Console.WriteLine("Total CPU Time Units: {0}", counter);
             Console.WriteLine("CPU Utilization: {0:0.00}%", GetCpuUtilization(p1,p2,p3,p4,p5,p6,p7,p8,p9));
             Console.WriteLine();
@@ -609,6 +631,7 @@ namespace CPU_Scheduler
             readyQ3 = new Queue<Process>();
             
             blockingList.Clear();
+            finished.Clear();
 
             Console.WriteLine("\n\n\n\n\n");
             Console.WriteLine("\nMLFQ Algorithm Running....\n");
@@ -617,6 +640,7 @@ namespace CPU_Scheduler
             RunMLFQ(runningP);
 
             Console.WriteLine();
+            Console.WriteLine("Finished\n");
             Console.WriteLine("Total CPU Time Units: {0}", counter);
             Console.WriteLine("CPU Utilization: {0:0.00}%", GetCpuUtilization(p1, p2, p3, p4, p5, p6, p7, p8, p9));
             Console.WriteLine();
